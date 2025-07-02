@@ -1,0 +1,94 @@
+// ============================= POA 비트겟 데모 트레이딩 (수정된 버전) ============================= //
+//@version=5
+strategy("비트겟 데모 트레이딩 전략 (수정)", overlay=true)
+
+// 기본 설정
+var string PASSWORD = "dldnjsgud"
+
+// 웹훅 메시지 - 올바른 심볼 사용
+// 주의: quote에 .P 사용하지 않음
+
+// 롱 진입 (선물)
+demo_long_entry_msg = '{ "password":"' + PASSWORD + '", "exchange":"BITGET", "base":"BTC", "quote":"USDT", "side":"entry/buy", "amount":"0.01", "leverage":"2", "order_name": "데모롱진입" }'
+
+// 롱 청산 (선물)
+demo_long_exit_msg = '{ "password":"' + PASSWORD + '", "exchange":"BITGET", "base":"BTC", "quote":"USDT", "side":"close/sell", "percent":"100", "order_name": "데모롱청산" }'
+
+// 숏 진입 (선물)
+demo_short_entry_msg = '{ "password":"' + PASSWORD + '", "exchange":"BITGET", "base":"BTC", "quote":"USDT", "side":"entry/sell", "amount":"0.01", "leverage":"2", "order_name": "데모숏진입" }'
+
+// 숏 청산 (선물)
+demo_short_exit_msg = '{ "password":"' + PASSWORD + '", "exchange":"BITGET", "base":"BTC", "quote":"USDT", "side":"close/buy", "percent":"100", "order_name": "데모숏청산" }'
+
+// 현물 거래 메시지
+spot_buy_msg = '{ "password":"' + PASSWORD + '", "exchange":"BITGET", "base":"BTC", "quote":"USDT", "side":"buy", "amount":"0.001", "order_name": "데모현물매수" }'
+
+spot_sell_msg = '{ "password":"' + PASSWORD + '", "exchange":"BITGET", "base":"BTC", "quote":"USDT", "side":"sell", "percent":"100", "order_name": "데모현물매도" }'
+
+// 간단한 전략 로직 (예제)
+sma_fast = ta.sma(close, 10)
+sma_slow = ta.sma(close, 20)
+
+// 골든크로스/데드크로스 감지
+long_condition = ta.crossover(sma_fast, sma_slow)
+short_condition = ta.crossunder(sma_fast, sma_slow)
+long_exit_condition = ta.crossunder(sma_fast, sma_slow)
+short_exit_condition = ta.crossover(sma_fast, sma_slow)
+
+// 포지션 상태
+in_long = strategy.position_size > 0
+in_short = strategy.position_size < 0
+no_position = strategy.position_size == 0
+
+// 거래 모드 선택 (현물 vs 선물)
+trade_futures = input.bool(true, title="선물 거래 모드", tooltip="체크: 선물거래, 해제: 현물거래")
+
+// 진입 조건
+if long_condition and no_position
+    if trade_futures
+        strategy.entry("Long", strategy.long, alert_message=demo_long_entry_msg)
+    else
+        strategy.entry("SpotBuy", strategy.long, alert_message=spot_buy_msg)
+
+if short_condition and no_position and trade_futures  // 선물에서만 숏 가능
+    strategy.entry("Short", strategy.short, alert_message=demo_short_entry_msg)
+
+// 청산 조건
+if long_exit_condition and in_long
+    if trade_futures
+        strategy.close("Long", comment="롱청산", alert_message=demo_long_exit_msg)
+    else
+        strategy.close("SpotBuy", comment="현물매도", alert_message=spot_sell_msg)
+
+if short_exit_condition and in_short and trade_futures
+    strategy.close("Short", comment="숏청산", alert_message=demo_short_exit_msg)
+
+// 시각화
+plot(sma_fast, "Fast MA", color.blue, linewidth=2)
+plot(sma_slow, "Slow MA", color.red, linewidth=2)
+
+plotshape(long_condition, title="롱신호", location=location.belowbar, style=shape.triangleup, size=size.small, color=color.green, text="DEMO LONG")
+plotshape(short_condition and trade_futures, title="숏신호", location=location.abovebar, style=shape.triangledown, size=size.small, color=color.red, text="DEMO SHORT")
+
+// 정보 테이블
+if barstate.islast
+    var table info_table = table.new(position.top_right, 2, 5, bgcolor=color.white, border_width=1)
+    table.cell(info_table, 0, 0, "모드", text_color=color.white, bgcolor=color.navy)
+    table.cell(info_table, 1, 0, "데모 트레이딩", text_color=color.white, bgcolor=color.orange)
+    table.cell(info_table, 0, 1, "거래소", text_color=color.black)
+    table.cell(info_table, 1, 1, "BITGET", text_color=color.black)
+    table.cell(info_table, 0, 2, "거래타입", text_color=color.black)
+    table.cell(info_table, 1, 2, trade_futures ? "선물" : "현물", text_color=color.black)
+    table.cell(info_table, 0, 3, "페어", text_color=color.black)
+    table.cell(info_table, 1, 3, "BTC/USDT", text_color=color.black)
+    table.cell(info_table, 0, 4, "레버리지", text_color=color.black)
+    table.cell(info_table, 1, 4, trade_futures ? "2x" : "1x", text_color=color.black)
+
+// 알림 조건
+alertcondition(long_condition and trade_futures, title="데모 선물 롱 진입", message=demo_long_entry_msg)
+alertcondition(short_condition and trade_futures, title="데모 선물 숏 진입", message=demo_short_entry_msg)
+alertcondition(long_exit_condition and in_long and trade_futures, title="데모 선물 롱 청산", message=demo_long_exit_msg)
+alertcondition(short_exit_condition and in_short and trade_futures, title="데모 선물 숏 청산", message=demo_short_exit_msg)
+
+alertcondition(long_condition and not trade_futures, title="데모 현물 매수", message=spot_buy_msg)
+alertcondition(long_exit_condition and in_long and not trade_futures, title="데모 현물 매도", message=spot_sell_msg)

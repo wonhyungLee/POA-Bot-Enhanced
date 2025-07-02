@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 키 수정 - POA Bot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-brand {
+            font-weight: bold;
+            color: white !important;
+        }
+        .container {
+            margin-top: 30px;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            border-radius: 8px;
+        }
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        .exchange-badge {
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 0.5em 1em;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="fas fa-robot me-2"></i>POA Bot 관리자
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link text-white" href="/admin/logout">
+                    <i class="fas fa-sign-out-alt me-1"></i>로그아웃
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-edit me-2"></i>API 키 수정
+                        </h5>
+                        <span class="badge exchange-badge 
+                            {% if api_key.exchange == 'UPBIT' %}bg-warning
+                            {% elif api_key.exchange == 'BINANCE' %}bg-info
+                            {% elif api_key.exchange == 'BYBIT' %}bg-secondary
+                            {% elif api_key.exchange == 'BITGET' %}bg-success
+                            {% elif api_key.exchange == 'OKX' %}bg-primary
+                            {% else %}bg-dark
+                            {% endif %}">
+                            {{ api_key.exchange }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="/admin/api-key/{{ api_key.id }}/update">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="exchange" class="form-label">거래소</label>
+                                        <select class="form-select" id="exchange" name="exchange" required>
+                                            <option value="UPBIT" {% if api_key.exchange == 'UPBIT' %}selected{% endif %}>업비트 (UPBIT)</option>
+                                            <option value="BINANCE" {% if api_key.exchange == 'BINANCE' %}selected{% endif %}>바이낸스 (BINANCE)</option>
+                                            <option value="BYBIT" {% if api_key.exchange == 'BYBIT' %}selected{% endif %}>바이비트 (BYBIT)</option>
+                                            <option value="BITGET" {% if api_key.exchange == 'BITGET' %}selected{% endif %}>비트겟 (BITGET)</option>
+                                            <option value="OKX" {% if api_key.exchange == 'OKX' %}selected{% endif %}>OKX</option>
+                                            <option value="KIS" {% if api_key.exchange == 'KIS' %}selected{% endif %}>한국투자증권 (KIS)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">API 키 ID</label>
+                                        <input type="text" class="form-control" value="{{ api_key.id }}" readonly>
+                                        <div class="form-text">시스템에서 자동 생성된 ID</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="api_key" class="form-label">API 키</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="api_key" name="api_key" 
+                                           value="{{ api_key.api_key }}" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('api_key')">
+                                        <i class="fas fa-eye" id="api_key_icon"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="secret_key" class="form-label">Secret 키</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="secret_key" name="secret_key" 
+                                           value="{{ api_key.secret_key }}" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('secret_key')">
+                                        <i class="fas fa-eye" id="secret_key_icon"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="passphrase" class="form-label">패스프레이즈 (선택사항)</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="passphrase" name="passphrase" 
+                                           value="{{ api_key.passphrase if api_key.passphrase else '' }}">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('passphrase')">
+                                        <i class="fas fa-eye" id="passphrase_icon"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">OKX, BITGET 등에서 필요</div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="account_number" class="form-label">계좌번호 (선택사항)</label>
+                                        <input type="text" class="form-control" id="account_number" name="account_number" 
+                                               value="{{ api_key.account_number if api_key.account_number else '' }}">
+                                        <div class="form-text">주식 거래소에서 필요</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="account_code" class="form-label">계좌코드 (선택사항)</label>
+                                        <input type="text" class="form-control" id="account_code" name="account_code" 
+                                               value="{{ api_key.account_code if api_key.account_code else '' }}">
+                                        <div class="form-text">주식 거래소에서 필요 (예: 01)</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <a href="/admin/dashboard" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>취소
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>변경사항 저장
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 정보 카드 -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>참고 정보
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>거래소별 필수 정보</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>업비트:</strong> API 키, Secret 키</li>
+                                    <li><strong>바이낸스:</strong> API 키, Secret 키</li>
+                                    <li><strong>바이비트:</strong> API 키, Secret 키</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>추가 정보가 필요한 거래소</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>비트겟:</strong> API 키, Secret 키, 패스프레이즈</li>
+                                    <li><strong>OKX:</strong> API 키, Secret 키, 패스프레이즈</li>
+                                    <li><strong>한투증권:</strong> API 키, Secret 키, 계좌번호, 계좌코드</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning mt-3" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>보안 주의사항:</strong> API 키는 암호화되어 저장되지만, 가능한 한 읽기 전용 권한으로 설정하고 IP 제한을 활용하세요.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const icon = document.getElementById(fieldId + '_icon');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
+</body>
+</html>
