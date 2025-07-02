@@ -23,6 +23,7 @@ from exchange.utility import (
     log_error_message,
     log_message,
 )
+from exchange.utility.LogMaker import log_system_startup, log_system_shutdown
 import traceback
 from exchange import get_exchange, log_message, db, settings, get_bot, pocket
 import ipaddress
@@ -88,9 +89,13 @@ async def startup():
     # 관리자 인터페이스용 데이터베이스 테이블 생성
     init_admin_db()
     log_message(f"POABOT 실행 완료! - 버전:{VERSION}")
+    # 디스코드 시작 알림
+    log_system_startup()
 
 @app.on_event("shutdown")
 async def shutdown():
+    # 디스코드 종료 알림
+    log_system_shutdown()
     db.close()
 
 def init_admin_db():
